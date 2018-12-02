@@ -5,10 +5,11 @@ import cv2
 import sys
 import numpy as np
 import os 
-from sklearn.neighbors import KNeighborsClassifier
+#from sklearn.neighbors import KNeighborsClassifier
 
 standard_size = (150,50)
-training_dir = '/home/helix/Working/Reporitories/machine_learning/training_set/Offline_Genuine/'
+#training_dir = '/home/helix/Working/Reporitories/machine_learning/training_set/Offline_Genuine/'
+training_dir = '../training_set/Offline_Genuine/'
 
 def print_img(img):
 	for i in range(len(img)):
