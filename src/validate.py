@@ -21,6 +21,12 @@ def print_img(img, bg_char='0', fg_char='1', pure_img=False):
 				print(bg_char, end='')
 
 		print('.')
+def preprocess_image(img_path):
+	img = cv2.imread(img_path, 1);
+	img = cv2.resize(img, standard_size, interpolation=cv2.INTER_AREA)
+	img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+	(thresh, img) = cv2.threshold(img, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+	return img
 
 def get_training_set():
 	train_labels = []
@@ -29,14 +35,11 @@ def get_training_set():
 		train_labels.append(str(i+1).zfill(3))
 		train_datas.append([])
 		for j in range(10):
-			path = training_dir + train_labels[-1] + "_" + str(j+1).zfill(2) + '.PNG'
-			if not os.path.isfile(path):
+			img_path = training_dir + train_labels[-1] + "_" + str(j+1).zfill(2) + '.PNG'
+			if not os.path.isfile(img_path):
 				break
-			tmp = cv2.imread(path, 1);
-			tmp = cv2.resize(tmp, standard_size, interpolation=cv2.INTER_AREA)
-			tmp = cv2.cvtColor(tmp, cv2.COLOR_BGR2GRAY)
-			(thresh, tmp) = cv2.threshold(tmp, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-			train_datas[-1].append(tmp)
+			img = preprocess_image(img_path)
+			train_datas[-1].append(img)
 	return (train_datas, train_labels)
 
 def get_testing_set():
@@ -46,14 +49,15 @@ def get_testing_set():
 		test_labels.append(str(i+1).zfill(3))
 		test_datas.append([])
 		for j in range(11,21):
-			path = training_dir + test_labels[-1] + "_" + str(j+1).zfill(2) + '.PNG'
-			if not os.path.isfile(path):
+			img_path = training_dir + test_labels[-1] + "_" + str(j+1).zfill(2) + '.PNG'
+			if not os.path.isfile(img_path):
 				break
-			tmp = cv2.imread(path, 1);
-			tmp = cv2.resize(tmp, standard_size, interpolation=cv2.INTER_AREA)
-			tmp = cv2.cvtColor(tmp, cv2.COLOR_BGR2GRAY)
-			(thresh, tmp) = cv2.threshold(tmp, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-			test_datas[-1].append(tmp.ravel())
+			img = preprocess_image(img_path)
+			#tmp = cv2.imread(path, 1);
+			#tmp = cv2.resize(tmp, standard_size, interpolation=cv2.INTER_AREA)
+			#tmp = cv2.cvtColor(tmp, cv2.COLOR_BGR2GRAY)
+			#(thresh, tmp) = cv2.threshold(tmp, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+			test_datas[-1].append(img)
 	return (test_datas, test_labels)
 
 def print_datas(datas):
