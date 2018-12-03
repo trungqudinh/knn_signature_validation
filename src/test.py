@@ -37,8 +37,8 @@ def get_training_set():
 	#		(thresh, tmp) = cv2.threshold(tmp, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
 			train_datas[-1].append(tmp)
 #		train_datas[-1] = train_datas[-1(]
-#	train_labels = np.array(train_labels)
-#	train_datas = np.array(train_datas)
+	train_labels = np.array(train_labels)
+	train_datas = np.array(train_datas)
 	return (train_datas, train_labels)
 
 def get_testing_set():

@@ -9,14 +9,17 @@ import os
 standard_size = (150,50)
 training_dir = '../training_set/Offline_Genuine/'
 
-def print_img(img):
+def print_img(img, bg_char='0', fg_char='1', pure_img=False):
 	for i in range(len(img)):
 		for j in range(len(img[0])):
+                    if pure_img:
+			print("%3d " % img[i,j], end='')
+                    else:
 			if img[i,j] == 0 :
-				print('0', end='')
+				print(fg_char, end='')
 			else:
-				print(' ', end='')
-			#print("%3d " % bw[i,j], end='')
+				print(bg_char, end='')
+
 		print('.')
 
 def get_training_set():
@@ -31,6 +34,8 @@ def get_training_set():
 				break
 			tmp = cv2.imread(path, 1);
 			tmp = cv2.resize(tmp, standard_size, interpolation=cv2.INTER_AREA)
+			tmp = cv2.cvtColor(tmp, cv2.COLOR_BGR2GRAY)
+			(thresh, tmp) = cv2.threshold(tmp, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
 			train_datas[-1].append(tmp)
 	return (train_datas, train_labels)
 
@@ -62,5 +67,5 @@ def print_datas(datas):
 #print_datas(train_datas)
 #model = KNeighborsClassifier()
 #model.fit(train_datas, test_labels)
-print(train_datas[0])
+#print(train_datas[0])
 #cv2.destroyAllWindows()
