@@ -21,9 +21,9 @@ def print_img(img, bg_char='0', fg_char='1', pure_img=False):
 				print(bg_char, end='')
 
 		print('.')
-def preprocess_image(img_path):
+def preprocess_image(img_path, size = standard_size):
 	img = cv2.imread(img_path, 1);
-	img = cv2.resize(img, standard_size, interpolation=cv2.INTER_AREA)
+	img = cv2.resize(img, size, interpolation=cv2.INTER_AREA)
 	img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 	(thresh, img) = cv2.threshold(img, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
 	return img
@@ -62,10 +62,36 @@ def print_datas(datas):
 			print_img(j)
 
 #print_img(train_datas[0][0])
-(train_datas, train_labels) = get_training_set()
-(test_datas, test_labels) = get_testing_set()
 #print_datas(train_datas)
 #model = KNeighborsClassifier()
 #model.fit(train_datas, test_labels)
 #print(train_datas[0])
 #cv2.destroyAllWindows()
+def standardize_datas((datas, labels)):
+    new_datas = datas
+    new_labels = np.array([int(label) for label in labels])
+    return (new_datas, new_labels)
+def get_data():
+    (train_datas, train_labels) = standardize_datas(get_training_set())
+    (test_datas, test_labels) = standardize_datas(get_testing_set())
+
+    return ((train_datas, train_labels), (test_datas, test_labels))
+
+def validate(size = standard_size, noNeighbours = 5):
+
+    (train_datas, train_labels) = standardize_datas(get_training_set())
+    (test_datas, test_labels) = standardize_datas(get_testing_set())
+
+    knn = cv2.KNearest()
+    knn.train(train_datas,train_labels)
+    ret,result,neighbours,dist = knn.find_nearest(test,k=5)
+
+    return (ret,result,neighbours,dist,test_labels)
+
+def calc_accuracy(result, test_labels):
+    matches = result==test_labels
+    correct = np.count_nonzero(matches)
+    accuracy = correct*100.0/result.size
+    return (matches, correct, accuracy)
+
+
