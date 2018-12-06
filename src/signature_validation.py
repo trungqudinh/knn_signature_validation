@@ -5,8 +5,9 @@ import cv2
 import sys
 import numpy as np
 import os 
+import logging
 
-standard_size = (20,10)
+standard_size = (150,50)
 training_dir = '../training_set/Offline_Genuine/'
 
 def print_img(img, bg_char='0', fg_char='1', pure_img=False):
@@ -61,6 +62,8 @@ def print_datas(datas):
 		for j in i:
 			print_img(j)
 
+def log_info(msg):
+    print("[INFO] " + msg);
 #print_img(train_datas[0][0])
 #print_datas(train_datas)
 #model = KNeighborsClassifier()
@@ -68,7 +71,9 @@ def print_datas(datas):
 #print(train_datas[0])
 #cv2.destroyAllWindows()
 def standardize_datas((datas, labels)):
-    new_datas = datas
+    new_datas = np.array(datas)
+    new_datas = new_datas.reshape(-1,7500).astype(np.float32)
+
     new_labels = np.array([int(label) for label in labels])
     return (new_datas, new_labels)
 def get_data():
@@ -79,13 +84,17 @@ def get_data():
 
 def validate(size = standard_size, noNeighbours = 5):
 
+    standard_size = size
     (train_datas, train_labels) = standardize_datas(get_training_set())
     (test_datas, test_labels) = standardize_datas(get_testing_set())
 
+    log_info("Create KNN")
     knn = cv2.KNearest()
+    log_info("Trainning")
     knn.train(train_datas,train_labels)
-    ret,result,neighbours,dist = knn.find_nearest(test,k=5)
-
+    log_info("Validating")
+    ret,result,neighbours,dist = knn.find_nearest(test_datas,k=5)
+    log_info("Done")
     return (ret,result,neighbours,dist,test_labels)
 
 def calc_accuracy(result, test_labels):
