@@ -6,6 +6,7 @@ import sys
 import numpy as np
 import os 
 import logging
+from sklearn.neighbors import KNeighborsClassifier
 
 standard_size = (150,50)
 training_dir = '../training_set/Offline_Genuine/'
@@ -30,6 +31,7 @@ def preprocess_image(img_path, size = standard_size):
 	return img
 
 def get_training_set():
+	train_paths = []
 	train_labels = []
 	train_datas = []
 	for i in range(16):
@@ -41,9 +43,11 @@ def get_training_set():
 		        train_labels.append(label)
 			img = preprocess_image(img_path)
 			train_datas.append(img)
-	return (train_datas, train_labels)
+			train_paths.append(img_path)
+	return (train_datas, train_labels, train_paths)
 
 def get_testing_set():
+	test_paths = []
 	test_labels = []
 	test_datas = []
 	for i in range(16):
@@ -55,7 +59,8 @@ def get_testing_set():
 		        test_labels.append(label)
 			img = preprocess_image(img_path)
 			test_datas.append(img)
-	return (test_datas, test_labels)
+			test_paths.append(img_path)
+	return (test_datas, test_labels, test_paths)
 
 def print_datas(datas):
 	for i in datas:
@@ -70,9 +75,11 @@ def log_info(msg):
 #model.fit(train_datas, test_labels)
 #print(train_datas[0])
 #cv2.destroyAllWindows()
-def standardize_datas((datas, labels)):
-    new_datas = np.array(datas)
-    new_datas = new_datas.reshape(-1,7500).astype(np.float32)
+def standardize_datas((datas, labels, data_paths)):
+    new_datas = np.array([])
+#    new_datas = new_datas.reshape(-1,7500).astype(np.float32)
+    for data in datas:
+	    new_datas = np.append(new_datas, get_histogram_datas(data))
 
     new_labels = np.array([int(label) for label in labels])
     return (new_datas, new_labels)
@@ -82,7 +89,17 @@ def get_data():
 
     return ((train_datas, train_labels), (test_datas, test_labels))
 
-def validate(size = standard_size, noNeighbours = 5):
+def validate_sklearn():
+    
+    ((train_datas, train_labels), (test_datas, test_labels)) = get_data()
+    clf = KNeighborsClassifier(n_neighbors=5,algorithm='auto',n_jobs=10)
+    clf.fit(train_datas,train_labels)
+    return clf
+
+
+def validate_opencv(size = standard_size, noNeighbours = 5):
+    
+    log_info("Using library from OpenCV");
 
     standard_size = size
     (train_datas, train_labels) = standardize_datas(get_training_set())
@@ -90,10 +107,13 @@ def validate(size = standard_size, noNeighbours = 5):
 
     log_info("Create KNN")
     knn = cv2.KNearest()
+
     log_info("Trainning")
     knn.train(train_datas,train_labels)
+
     log_info("Validating")
     ret,result,neighbours,dist = knn.find_nearest(test_datas,k=5)
+
     log_info("Done")
     return (ret,result,neighbours,dist,test_labels)
 
@@ -103,4 +123,19 @@ def calc_accuracy(result, test_labels):
     accuracy = correct*100.0/result.size
     return (matches, correct, accuracy)
 
+def print_intersection_image(img1, img2, bg_char='0', fg_char='1', pure_img=False):
+	img = np.zeros(shape=(50,150))
+	for i in range(len(img1)):
+		for j in range(len(img1[0])):
+			img[i,j] = max(img1[i,j], img2[i,j])
+	print_img(img, bg_char, fg_char, pure_img)
+
+def get_histogram_datas(img, bins=100):
+	while len(img) % bins == 0:
+		bins -= 1
+	size = len(img[0]) / bins
+	hist = np.zeros(bins)
+	for b in range(bins):
+		hist[b] = np.count_nonzero(img[:,b*size:(b+1)*size] == 0)
+	return (hist, bins)
 
