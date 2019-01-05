@@ -4,12 +4,15 @@ from __future__ import print_function
 import cv2
 import sys
 import numpy as np
-import os 
+import os
 import logging
 from sklearn.neighbors import KNeighborsClassifier
 
 standard_size = (150,50)
 training_dir = '../training_set/Offline_Genuine/'
+
+def log_info(msg):
+    print("[INFO] " + msg);
 
 def print_img(img, bg_char='0', fg_char='1', pure_img=False):
     for i in range(len(img)):
@@ -66,8 +69,6 @@ def print_datas(datas):
         for j in i:
             print_img(j)
 
-def log_info(msg):
-    print("[INFO] " + msg);
 #print_img(train_datas[0][0])
 #print_datas(train_datas)
 #model = KNeighborsClassifier()
