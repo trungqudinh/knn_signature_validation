@@ -6,13 +6,18 @@ import sys
 import numpy as np
 import os
 import logging
+import math
 from sklearn.neighbors import KNeighborsClassifier
 
-standard_size = (150,50)
+standard_size = (600,200)
 training_dir = '../training_set/Offline_Genuine/'
+LOG_DEBUG_ENABLE = False
+def log_info(*msg):
+    print("[INFO] ", msg)
 
-def log_info(msg):
-    print("[INFO] " + msg);
+def log_debug(*msg):
+    if LOG_DEBUG_ENABLE:
+        print("[DEBUG] ", msg)
 
 def print_img(img, bg_char='0', fg_char='1', pure_img=False):
     for i in range(len(img)):
@@ -75,52 +80,52 @@ def print_datas(datas):
 #model.fit(train_datas, test_labels)
 #print(train_datas[0])
 #cv2.destroyAllWindows()
-def standardize_datas((datas, labels, data_paths)):
-    new_datas = np.array([])
+def standardize_datas((datas, labels, data_paths), hist_bins=100):
+#    import pdb; pdb.set_trace()
+    new_datas = []
 #    new_datas = new_datas.reshape(-1,7500).astype(np.float32)
     for data in datas:
-        new_datas = np.append(new_datas, get_histogram_datas(data))
+        new_datas.append( get_histogram_data(data, hist_bins)[0])
 
     new_labels = np.array([int(label) for label in labels])
-    return (new_datas, new_labels)
-def get_data():
-    (train_datas, train_labels) = standardize_datas(get_training_set())
-    (test_datas, test_labels) = standardize_datas(get_testing_set())
+    return (new_datas, new_labels, data_paths)
 
-    return ((train_datas, train_labels), (test_datas, test_labels))
+def get_data(hist_bins=100):
+    (train_datas, train_labels, train_paths) = standardize_datas(get_training_set(), hist_bins)
+    (test_datas, test_labels, test_paths) = standardize_datas(get_testing_set(),hist_bins)
 
-def validate_sklearn():
+    return ((train_datas, train_labels, train_paths), (test_datas, test_labels, test_paths))
 
-    ((train_datas, train_labels), (test_datas, test_labels)) = get_data()
-    clf = KNeighborsClassifier(n_neighbors=5,algorithm='auto',n_jobs=10)
+def validate_sklearn(hist_bins=100):
+    ((train_datas, train_labels, train_paths), (test_datas, test_labels, test_paths)) = get_data(hist_bins)
+    clf = KNeighborsClassifier(n_neighbors=5,algorithm='auto',n_jobs=-1)
     clf.fit(train_datas,train_labels)
-    return clf
 
+######
+    pred = clf.predict(test_datas)
+    matches, correct, accuracy = calc_accuracy(pred, test_labels)
 
-def validate_opencv(size = standard_size, noNeighbours = 5):
+    log_debug("Predicted   : ", pred)
+    log_debug("Ground truth: ", test_labels)
 
-    log_info("Using library from OpenCV");
-
-    standard_size = size
-    (train_datas, train_labels) = standardize_datas(get_training_set())
-    (test_datas, test_labels) = standardize_datas(get_testing_set())
-
-    log_info("Create KNN")
-    knn = cv2.KNearest()
-
-    log_info("Trainning")
-    knn.train(train_datas,train_labels)
-
-    log_info("Validating")
-    ret,result,neighbours,dist = knn.find_nearest(test_datas,k=5)
-
-    log_info("Done")
-    return (ret,result,neighbours,dist,test_labels)
+######
+    return (matches, correct, accuracy)
 
 def calc_accuracy(result, test_labels):
+    ((train_datas, train_labels, train_paths), (test_datas, test_labels, test_paths)) = get_data()
     matches = result==test_labels
     correct = np.count_nonzero(matches)
     accuracy = correct*100.0/result.size
+
+####
+    i = 0
+    for m in matches:
+        log_debug(i," ", m)
+        if m == False:
+            log_debug("Predition   : ", result[i])
+            log_debug("Ground truth: ", test_labels[i]," ", test_paths[i])
+        i+=1
+####
     return (matches, correct, accuracy)
 
 def print_intersection_image(img1, img2, bg_char='0', fg_char='1', pure_img=False):
@@ -130,12 +135,53 @@ def print_intersection_image(img1, img2, bg_char='0', fg_char='1', pure_img=Fals
             img[i,j] = max(img1[i,j], img2[i,j])
     print_img(img, bg_char, fg_char, pure_img)
 
-def get_histogram_datas(img, bins=100):
+def crop(img):
+    points = cv2.findNonZero(img)
+    x, y, w, h = cv2.boundingRect(points)
+    return img[y: y+h, x: x+w]
+
+
+def rotate_img(img, degree):
+    num_rows, num_cols = img.shape[:2]
+
+    d=math.sqrt(num_cols**2 + num_rows**2)
+    h=(num_cols*num_cols*1.0)/d
+
+    rotation_matrix = cv2.getRotationMatrix2D((num_cols, 0), degree, 1)
+
+    img_rotation = cv2.warpAffine(img, rotation_matrix, (int(d*2), int(d*2)))
+    img_rotation = crop(img_rotation)
+
+    return img_rotation
+
+def get_image_histogram(img, bins=100):
     while len(img) % bins == 0:
         bins -= 1
     size = len(img[0]) / bins
-    hist = np.zeros(bins)
+#    hist = np.zeros(bins)
+    hist = []
     for b in range(bins):
-        hist[b] = np.count_nonzero(img[:,b*size:(b+1)*size] == 0)
+#        hist[b] = np.count_nonzero(img[:,b*size:(b+1)*size] == 0)
+        fg_c = np.count_nonzero(img[:,b*size:(b+1)*size] == 0)
+        bg_c = np.count_nonzero(img[:,b*size:(b+1)*size] != 0)
+        hist = np.append(hist, fg_c)
+        hist = np.append(hist, bg_c)
+
+    fg = np.count_nonzero(img == 0)
+    bg = np.count_nonzero(img)
+
+    hist = np.append(hist,fg*1.0/bg )
+ #   import pdb; pdb.set_trace()
+    return (hist, bins)
+
+def get_histogram_data(img, bins=30):
+    img_00 = get_image_histogram(img, bins)
+    img_45 = get_image_histogram(rotate_img(img,45), bins)
+    img_90 = get_image_histogram(rotate_img(img,60), bins)
+    hist=[]
+    hist=np.append(hist, img_00[0])
+    hist=np.append(hist, img_45[0])
+    hist=np.append(hist, img_90[0])
+#    import pdb; pdb.set_trace()
     return (hist, bins)
 
