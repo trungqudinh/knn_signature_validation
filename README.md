@@ -1,4 +1,11 @@
-# Reference
+# Signature validation using KNN
+
+## Usage
+
+- Go to src/ directory
+- Run main.py
+
+## Reference
 
 https://github.com/vadi95/Signature-Verification.git
 
