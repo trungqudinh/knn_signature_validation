@@ -5,8 +5,8 @@ import signature_validation as sv
 (test_datas, test_labels, test_paths) = sv.get_testing_set()
 
 
-#bins=[100, 90, 80, 70, 60, 50, 40, 30, 20, 10]
-bins=[600,500, 400, 300, 200, 100]
+bins=[600, 500, 400, 300, 200, 100, 90, 80, 70, 60, 50, 40, 30, 20, 10]
+#bins=[600,500, 400, 300, 200, 100]
 sv.log_info("Bins   | Accuracy \n")
 for bin in bins:
     matches, correct, accuracy =  sv.validate_sklearn(bin)

@@ -12,128 +12,13 @@ from sklearn.neighbors import KNeighborsClassifier
 standard_size = (600,200)
 training_dir = '../training_set/Offline_Genuine/'
 LOG_DEBUG_ENABLE = False
+
 def log_info(*msg):
     print("[INFO] ", msg)
 
 def log_debug(*msg):
     if LOG_DEBUG_ENABLE:
         print("[DEBUG] ", msg)
-
-def print_img(img, bg_char='0', fg_char='1', pure_img=False):
-    for i in range(len(img)):
-        for j in range(len(img[0])):
-            if pure_img:
-                print("%3d " % img[i,j], end='')
-            else:
-                if img[i,j] == 0 :
-                    print(fg_char, end='')
-                else:
-                    print(bg_char, end='')
-        print('.')
-def preprocess_image(img_path, size = standard_size):
-    img = cv2.imread(img_path, 1);
-    img = cv2.resize(img, size, interpolation=cv2.INTER_AREA)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    (thresh, img) = cv2.threshold(img, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-    return img
-
-def get_training_set():
-    train_paths = []
-    train_labels = []
-    train_datas = []
-    for i in range(16):
-        for j in range(10):
-            label = str(i+1).zfill(3)
-            img_path = training_dir + label + "_" + str(j+1).zfill(2) + '.PNG'
-            if not os.path.isfile(img_path):
-                break
-            train_labels.append(label)
-            img = preprocess_image(img_path)
-            train_datas.append(img)
-            train_paths.append(img_path)
-    return (train_datas, train_labels, train_paths)
-
-def get_testing_set():
-    test_paths = []
-    test_labels = []
-    test_datas = []
-    for i in range(16):
-        for j in range(11,21):
-            label = str(i+1).zfill(3)
-            img_path = training_dir + label + "_" + str(j+1).zfill(2) + '.PNG'
-            if not os.path.isfile(img_path):
-                break
-            test_labels.append(label)
-            img = preprocess_image(img_path)
-            test_datas.append(img)
-            test_paths.append(img_path)
-    return (test_datas, test_labels, test_paths)
-
-def print_datas(datas):
-    for i in datas:
-        for j in i:
-            print_img(j)
-
-#print_img(train_datas[0][0])
-#print_datas(train_datas)
-#model = KNeighborsClassifier()
-#model.fit(train_datas, test_labels)
-#print(train_datas[0])
-#cv2.destroyAllWindows()
-def standardize_datas((datas, labels, data_paths), hist_bins=100):
-#    import pdb; pdb.set_trace()
-    new_datas = []
-#    new_datas = new_datas.reshape(-1,7500).astype(np.float32)
-    for data in datas:
-        new_datas.append( get_histogram_data(data, hist_bins)[0])
-
-    new_labels = np.array([int(label) for label in labels])
-    return (new_datas, new_labels, data_paths)
-
-def get_data(hist_bins=100):
-    (train_datas, train_labels, train_paths) = standardize_datas(get_training_set(), hist_bins)
-    (test_datas, test_labels, test_paths) = standardize_datas(get_testing_set(),hist_bins)
-
-    return ((train_datas, train_labels, train_paths), (test_datas, test_labels, test_paths))
-
-def validate_sklearn(hist_bins=100):
-    ((train_datas, train_labels, train_paths), (test_datas, test_labels, test_paths)) = get_data(hist_bins)
-    clf = KNeighborsClassifier(n_neighbors=5,algorithm='auto',n_jobs=-1)
-    clf.fit(train_datas,train_labels)
-
-######
-    pred = clf.predict(test_datas)
-    matches, correct, accuracy = calc_accuracy(pred, test_labels)
-
-    log_debug("Predicted   : ", pred)
-    log_debug("Ground truth: ", test_labels)
-
-######
-    return (matches, correct, accuracy)
-
-def calc_accuracy(result, test_labels):
-    ((train_datas, train_labels, train_paths), (test_datas, test_labels, test_paths)) = get_data()
-    matches = result==test_labels
-    correct = np.count_nonzero(matches)
-    accuracy = correct*100.0/result.size
-
-####
-    i = 0
-    for m in matches:
-        log_debug(i," ", m)
-        if m == False:
-            log_debug("Predition   : ", result[i])
-            log_debug("Ground truth: ", test_labels[i]," ", test_paths[i])
-        i+=1
-####
-    return (matches, correct, accuracy)
-
-def print_intersection_image(img1, img2, bg_char='0', fg_char='1', pure_img=False):
-    img = np.zeros(shape=(50,150))
-    for i in range(len(img1)):
-        for j in range(len(img1[0])):
-            img[i,j] = max(img1[i,j], img2[i,j])
-    print_img(img, bg_char, fg_char, pure_img)
 
 def crop(img):
     points = cv2.findNonZero(img)
@@ -184,4 +69,117 @@ def get_histogram_data(img, bins=30):
     hist=np.append(hist, img_90[0])
 #    import pdb; pdb.set_trace()
     return (hist, bins)
+
+def print_img(img, bg_char='0', fg_char='1', pure_img=False):
+    for i in range(len(img)):
+        for j in range(len(img[0])):
+            if pure_img:
+                print("%3d " % img[i,j], end='')
+            else:
+                if img[i,j] == 0 :
+                    print(fg_char, end='')
+                else:
+                    print(bg_char, end='')
+        print('.')
+
+def print_intersection_image(img1, img2, bg_char='0', fg_char='1', pure_img=False):
+    img = np.zeros(shape=(50,150))
+    for i in range(len(img1)):
+        for j in range(len(img1[0])):
+            img[i,j] = max(img1[i,j], img2[i,j])
+    print_img(img, bg_char, fg_char, pure_img)
+
+
+def preprocess_image(img_path, size = standard_size):
+    img = cv2.imread(img_path, 1);
+    img = cv2.resize(img, size, interpolation=cv2.INTER_AREA)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    (thresh, img) = cv2.threshold(img, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+    return img
+
+def get_training_set():
+    train_paths = []
+    train_labels = []
+    train_datas = []
+    for i in range(16):
+        for j in range(10):
+            label = str(i+1).zfill(3)
+            img_path = training_dir + label + "_" + str(j+1).zfill(2) + '.PNG'
+            if not os.path.isfile(img_path):
+                break
+            train_labels.append(label)
+            img = preprocess_image(img_path)
+            train_datas.append(img)
+            train_paths.append(img_path)
+    return (train_datas, train_labels, train_paths)
+
+def get_testing_set():
+    test_paths = []
+    test_labels = []
+    test_datas = []
+    for i in range(16):
+        for j in range(11,21):
+            label = str(i+1).zfill(3)
+            img_path = training_dir + label + "_" + str(j+1).zfill(2) + '.PNG'
+            if not os.path.isfile(img_path):
+                break
+            test_labels.append(label)
+            img = preprocess_image(img_path)
+            test_datas.append(img)
+            test_paths.append(img_path)
+    return (test_datas, test_labels, test_paths)
+
+def print_datas(datas):
+    for i in datas:
+        for j in i:
+            print_img(j)
+
+def standardize_datas((datas, labels, data_paths), hist_bins=100):
+#    import pdb; pdb.set_trace()
+    new_datas = []
+#    new_datas = new_datas.reshape(-1,7500).astype(np.float32)
+    for data in datas:
+        new_datas.append( get_histogram_data(data, hist_bins)[0])
+
+    new_labels = np.array([int(label) for label in labels])
+    return (new_datas, new_labels, data_paths)
+
+def get_data(hist_bins=100):
+    (train_datas, train_labels, train_paths) = standardize_datas(get_training_set(), hist_bins)
+    (test_datas, test_labels, test_paths) = standardize_datas(get_testing_set(),hist_bins)
+
+    return ((train_datas, train_labels, train_paths), (test_datas, test_labels, test_paths))
+
+
+def calc_accuracy(result, test_labels):
+    ((train_datas, train_labels, train_paths), (test_datas, test_labels, test_paths)) = get_data()
+    matches = result==test_labels
+    correct = np.count_nonzero(matches)
+    accuracy = correct*100.0/result.size
+
+####
+    i = 0
+    for m in matches:
+        log_debug(i," ", m)
+        if m == False:
+            log_debug("Predition   : ", result[i])
+            log_debug("Ground truth: ", test_labels[i]," ", test_paths[i])
+        i+=1
+####
+    return (matches, correct, accuracy)
+
+def validate_sklearn(hist_bins=100):
+    ((train_datas, train_labels, train_paths), (test_datas, test_labels, test_paths)) = get_data(hist_bins)
+    clf = KNeighborsClassifier(n_neighbors=3, algorithm='auto', n_jobs=-1)
+    clf.fit(train_datas,train_labels)
+
+######
+    pred = clf.predict(test_datas)
+    matches, correct, accuracy = calc_accuracy(pred, test_labels)
+
+    log_debug("Predicted   : ", pred)
+    log_debug("Ground truth: ", test_labels)
+
+######
+    return (matches, correct, accuracy)
 
