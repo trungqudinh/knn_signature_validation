@@ -10,6 +10,7 @@ import math
 from sklearn.neighbors import KNeighborsClassifier
 
 standard_size = (600,200)
+#standard_size = (200,100)
 training_dir = '../training_set/Offline_Genuine/'
 LOG_DEBUG_ENABLE = False
 
@@ -95,7 +96,17 @@ def preprocess_image(img_path, size = standard_size):
     img = cv2.resize(img, size, interpolation=cv2.INTER_AREA)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     (thresh, img) = cv2.threshold(img, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+
     return img
+
+def display_image(title, img, time=100, is_key_waiting=False, position=(0,0) ):
+#    import pdb; pdb.set_trace()
+    x, y = position
+    cv2.namedWindow(title)
+    cv2.moveWindow(title, x, y)
+    cv2.imshow(title, img)
+    if is_key_waiting:
+        cv2.waitKey(time) & 0XFF
 
 def get_training_set():
     train_paths = []
@@ -111,6 +122,8 @@ def get_training_set():
             img = preprocess_image(img_path)
             train_datas.append(img)
             train_paths.append(img_path)
+#    for img in train_datas:
+#        display_image("Trainning",img, 10)
     return (train_datas, train_labels, train_paths)
 
 def get_testing_set():
@@ -127,6 +140,10 @@ def get_testing_set():
             img = preprocess_image(img_path)
             test_datas.append(img)
             test_paths.append(img_path)
+
+#    for img in test_datas:
+#        display_image("Testing",img, 10)
+
     return (test_datas, test_labels, test_paths)
 
 def print_datas(datas):
@@ -172,17 +189,42 @@ def calc_accuracy(result, test_labels):
     return (matches, correct, accuracy)
 
 def validate_sklearn(hist_bins=100):
+    test_imgs = get_testing_set()[0]
     ((train_datas, train_labels, train_paths), (test_datas, test_labels, test_paths)) = get_data(hist_bins)
     clf = KNeighborsClassifier(n_neighbors=3, algorithm='auto', n_jobs=-1)
     clf.fit(train_datas,train_labels)
 
-######
     pred = clf.predict(test_datas)
     matches, correct, accuracy = calc_accuracy(pred, test_labels)
 
-    log_debug("Predicted   : ", pred)
-    log_debug("Ground truth: ", test_labels)
-
 ######
+    if LOG_DEBUG_ENABLE :
+
+        i = 0
+        count = 0
+        for m in matches:
+            if m == False:
+                log_info("Predicted   : ", pred[i])
+                log_info("Ground truth: ", test_labels[i])
+
+                j = 0
+                if count % 5 == 0:
+                    j = count//5
+                x = (count%5)*(test_imgs[i].shape[1] + 50)
+                y = (count//5)*(test_imgs[i].shape[0] + 70)
+
+                display_image(test_paths[i], test_imgs[i], is_key_waiting=True, position=(x, y))
+
+                count += 1
+
+            i += 1
+
+        while cv2.waitKey(0) != ord('q'):
+            log_debug("Press q to quit")
+        cv2.destroyAllWindows()
+######
+    log_info("Predicted   : ", pred)
+    log_info("Ground truth: ", test_labels)
+
     return (matches, correct, accuracy)
 
