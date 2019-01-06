@@ -13,11 +13,19 @@
 - Go to src/ directory
 - python3 main.py
 
+### Note
+
+- Enable debug mode to know wrong prediction
+
+	In src/signature_validation.py
+	set LOG_DEBUG_ENABLE = True
+
 ## Requirements
 - Python 3.6+
 - OpenCV 3.2
 - Numpy
 - Scikit-learn
+
 
 ## Reference
 
