@@ -42,7 +42,7 @@ def rotate_img(img, degree):
 def get_image_histogram(img, bins=100):
     while len(img) % bins == 0:
         bins -= 1
-    size = len(img[0]) / bins
+    size = len(img[0]) // bins
 #    hist = np.zeros(bins)
     hist = []
     for b in range(bins):
@@ -134,8 +134,11 @@ def print_datas(datas):
         for j in i:
             print_img(j)
 
-def standardize_datas((datas, labels, data_paths), hist_bins=100):
+#def standardize_datas(datas, labels, data_paths, hist_bins=100):
+def standardize_datas(datas_tuple, hist_bins=100):
 #    import pdb; pdb.set_trace()
+    datas, labels, data_paths = datas_tuple # Python3 does not support tuple as argument
+
     new_datas = []
 #    new_datas = new_datas.reshape(-1,7500).astype(np.float32)
     for data in datas:
