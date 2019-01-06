@@ -1,9 +1,23 @@
 # Signature validation using KNN
 
+## Idea
+
+- Split image into smaller bins at vertical size.
+- Each bin will become attribute value of vector.
+- Do above step after rotated image
+  - Rotate 45 degree
+  - Rotate 90 degree
+
 ## Usage
 
 - Go to src/ directory
-- Run main.py
+- python3 main.py
+
+## Requirements
+- Python 3.6+
+- OpenCV 3.2
+- Numpy
+- Scikit-learn
 
 ## Reference
 
