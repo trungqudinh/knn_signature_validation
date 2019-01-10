@@ -100,7 +100,6 @@ def preprocess_image(img_path, size = standard_size):
     return img
 
 def display_image(title, img, time=100, is_key_waiting=False, position=(0,0) ):
-#    import pdb; pdb.set_trace()
     x, y = position
     cv2.namedWindow(title)
     cv2.moveWindow(title, x, y)
@@ -188,10 +187,11 @@ def calc_accuracy(result, test_labels):
 ####
     return (matches, correct, accuracy)
 
-def validate_sklearn(hist_bins=100):
+def validate_sklearn(hist_bins=100, image_size=(600,400), K_neighbors=5):
+    standard_size=image_size
     test_imgs = get_testing_set()[0]
     ((train_datas, train_labels, train_paths), (test_datas, test_labels, test_paths)) = get_data(hist_bins)
-    clf = KNeighborsClassifier(n_neighbors=3, algorithm='auto', n_jobs=-1)
+    clf = KNeighborsClassifier(n_neighbors=K_neighbors, algorithm='auto', n_jobs=-1)
     clf.fit(train_datas,train_labels)
 
     pred = clf.predict(test_datas)
@@ -223,8 +223,8 @@ def validate_sklearn(hist_bins=100):
             log_debug("Press q to quit")
         cv2.destroyAllWindows()
 ######
-    log_info("Predicted   : ", pred)
-    log_info("Ground truth: ", test_labels)
+#    log_info("Predicted   : ", pred)
+#    log_info("Ground truth: ", test_labels)
 
     return (matches, correct, accuracy)
 

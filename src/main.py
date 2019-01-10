@@ -5,12 +5,29 @@ import signature_validation as sv
 (test_datas, test_labels, test_paths) = sv.get_testing_set()
 
 
-#bins=[600, 500, 400, 300, 200, 100, 90, 80, 70, 60, 50, 40, 30, 20, 10]
-#bins=[600,500, 400, 300, 200, 100]
+def run(img_size, K, bins):
+    print("    Image size: {}\n    K={}\n    bins={}\n".format(img_size, K, bins))
+    for bin in bins:
+        matches, correct, accuracy =  sv.validate_sklearn(bin, img_size, K)
+        print("{} | {}".format(bin, accuracy))
 
-bins=[100, 50, 20]
-print("Standard size of image: ", sv.standard_size)
-for bin in bins:
-    matches, correct, accuracy =  sv.validate_sklearn(bin)
-    print("Accuracy of {} bin histogram: {}".format(bin, accuracy))
 
+size=(600,200)
+k=5
+bins=[600, 500, 400, 300, 200, 100, 90, 80, 70, 60, 50, 40, 30, 20, 10]
+run(size, k, bins)
+
+size=(600,200)
+k=3
+bins=[600, 500, 400, 300, 200, 100, 90, 80, 70, 60, 50, 40, 30, 20, 10]
+run(size, k, bins)
+
+size=(400,200)
+k=5
+bins=[200, 100, 90, 80, 70, 60, 50, 40, 30, 20, 10]
+run(size, k, bins)
+
+size=(200, 100)
+k=3
+bins=[200, 100, 90, 80, 70, 60, 50, 40, 30, 20, 10]
+run(size, k, bins)
